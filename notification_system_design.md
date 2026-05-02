@@ -1,93 +1,76 @@
 # Notification System Design
 
-## 1. Overview
-This project implements a frontend-based Notification System with an integrated Logging Middleware. The system captures application events and sends structured logs to an external logging API.
+## Stage 1 Approach
+
+### Goal
+
+Display top N priority notifications efficiently without storing data in DB.
 
 ---
 
-## 2. Architecture
+## Priority Logic
 
-Frontend (React + TypeScript)
-        ↓
-Logging Middleware (Reusable Function)
-        ↓
-External Logging API (Test Server)
+Notifications are ranked based on:
 
----
+1. Type Weight:
 
-## 3. Components
+   * Placement (3)
+   * Result (2)
+   * Event (1)
 
-### Frontend Application
-- Built using React (Vite + TypeScript)
-- Displays notification messages
-- Handles user interface and state
-
-### Logging Middleware
-- A reusable function: Log(stack, level, package, message)
-- Sends logs to external API
-- Uses Bearer Token authentication
-
-### External Logging API
-- Endpoint: /evaluation-service/logs
-- Stores and processes logs
+2. Timestamp (latest first)
 
 ---
 
-## 4. Workflow
+## Algorithm
 
-1. User opens the application
-2. React component loads
-3. Logging middleware is triggered
-4. Log data is sent to API
-5. API responds with success message
+1. Fetch notifications from API
+2. Apply sorting:
 
-Example:
-App Load → Log("frontend", "info", "component", "App initialized")
+   * Compare type weight
+   * If equal → compare timestamp
+3. Return top N (default = 10)
 
----
+Time Complexity:
 
-## 5. Logging Strategy
-
-Logs are categorized as:
-
-- **info** → General application flow  
-- **debug** → Development-level details  
-- **warn** → Performance or delay issues  
-- **error** → Failures in components/API  
-- **fatal** → Critical system failures  
+* Sorting: O(n log n)
+* Selection: O(n)
 
 ---
 
-## 6. Token-Based Authentication
+## Scalability Considerations
 
-- User registers → gets clientID & clientSecret  
-- Auth API generates access_token  
-- Token stored in localStorage  
-- Used in Authorization header:
+For large-scale systems:
 
-Authorization: Bearer <token>
-
----
-
-## 7. Key Features
-
-- Reusable logging middleware  
-- Structured logging system  
-- Real-time API integration  
-- Clean and responsive UI  
-- Error handling and debugging support  
+* Use Max Heap (priority queue) → O(n log k)
+* Streaming updates → maintain rolling top N
+* Cache top results for faster access
 
 ---
 
-## 8. Future Improvements
+## Real-Time Handling
 
-- Add real backend notification service  
-- Store notifications in database  
-- Add user authentication  
-- Implement push notifications  
+New notifications:
+
+* Insert into priority structure
+* Recompute top N efficiently
 
 ---
 
-## 9. Conclusion
+## Logging Strategy
 
-This system demonstrates a scalable logging approach integrated into a frontend application. It helps in monitoring application behavior, debugging issues, and maintaining production-level code quality.
+All key events are logged:
+
+* API fetch
+* Errors
+* User actions (view notification)
+
+---
+
+## Conclusion
+
+The system ensures:
+
+* Efficient prioritization
+* Scalability for high-volume streams
+* Clear separation of concerns (API, UI, logic)

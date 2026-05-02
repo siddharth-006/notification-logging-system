@@ -1,73 +1,139 @@
-# React + TypeScript + Vite
+# Campus Notifications App (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+A React + TypeScript application that fetches campus notifications from a protected API and displays them with:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* Priority-based sorting (Placement > Result > Event)
+* Filtering by notification type
+* Viewed vs New tracking (persistent)
+* Pagination (page & limit)
+* Centralized logging via a reusable logging middleware
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+### 1. Priority Inbox
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Top notifications are sorted by:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. Type weight (Placement > Result > Event)
+2. Recency (latest first)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 2. Filtering
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Dropdown to filter notifications by:
+
+* All
+* Event
+* Result
+* Placement
+
+### 3. Viewed vs New
+
+* Click a notification to mark as viewed
+* Stored in localStorage
+* UI updates with ✔️ (viewed) and dimmed card
+
+### 4. Pagination
+
+* Navigate using Next / Previous buttons
+* API queried with `page` and `limit`
+
+### 5. Logging Middleware
+
+All important actions are logged via:
+
+```
+Log(stack, level, package, message)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Examples:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+* Fetch start / success / failure
+* Notification viewed
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Tech Stack
+
+* React (Vite)
+* TypeScript
+* Material UI
+* Fetch API
+
+---
+
+## Setup Instructions
+
+1. Install dependencies
+
 ```
+npm install
+```
+
+2. Run the app
+
+```
+npm run dev
+```
+
+3. Generate token (Thunder Client / Postman)
+   POST `/auth`
+
+4. Set token in browser console
+
+```
+localStorage.setItem("token", "YOUR_ACCESS_TOKEN")
+```
+
+---
+
+## API Endpoints
+
+* GET `/notifications?page=1&limit=10`
+* POST `/logs`
+
+---
+
+## Folder Structure
+
+```
+src/
+ ├── api/
+ ├── logging_middleware/
+ ├── utils/
+ ├── App.tsx
+```
+
+---
+
+## Notes
+
+* No hardcoded data used
+* Fully API-driven
+* Clean UI with Material UI
+* Designed for scalability and readability
+
+---
+## Screenshots
+
+### Desktop View
+![alt text](desktop_view-1.png)
+
+### Mobile View
+![alt text](mobile_view.png)
+### Filtering Feature
+![alt text](filter.png)
+
+### Viewed vs New
+![alt text](before_click.png)
+![alt text](after_click.png)
+
+
+### Pagination
+![alt text](pagination.png)
+
+### Console Logs
+![alt text](console_log.png)

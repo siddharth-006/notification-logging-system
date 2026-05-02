@@ -1,73 +1,160 @@
 import { useEffect, useState } from "react";
+import { fetchNotifications } from "./api/notifications";
+import { getTopNotifications } from "./utils/priority";
 import { Log } from "./logging_middleware";
 
+import {
+  Container,
+  Typography,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
+} from "@mui/material";
+
 function App() {
-  const [notifications, setNotifications] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [type, setType] = useState("");
+
+  // ✅ viewed state
+  const [viewed, setViewed] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem("viewed") || "[]");
+  });
+
+  // ✅ pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
 
   useEffect(() => {
-    Log("frontend", "info", "component", "App initialized");
+    const loadData = async () => {
+      try {
+        Log("frontend", "info", "api", "Fetching notifications");
 
-    setTimeout(() => {
-      Log("frontend", "debug", "hook", "Fetching notifications");
+        const data = await fetchNotifications(page, limit);
 
-      setNotifications([
-        "New message received",
-        "Your order has been shipped",
-        "System maintenance at 10 PM"
-      ]);
+        Log("frontend", "info", "api", "Notifications fetched");
 
-      Log("frontend", "info", "api", "Notifications loaded");
-    }, 1500);
-  }, []);
+        setNotifications(data.notifications || []);
+      } catch (error) {
+        Log("frontend", "error", "api", "Failed to fetch notifications");
+      }
+    };
+
+    loadData();
+  }, [page]); // ✅ important
+
+  // ✅ mark viewed
+  const markAsViewed = (id: string) => {
+    const updated = [...new Set([...viewed, id])];
+    setViewed(updated);
+    localStorage.setItem("viewed", JSON.stringify(updated));
+
+    Log("frontend", "info", "component", `Notification viewed: ${id}`);
+  };
+
+  // ✅ filtering
+  const filtered = type
+    ? notifications.filter((n) => n.Type === type)
+    : notifications;
+
+  // ✅ priority
+  const topNotifications = getTopNotifications(filtered);
 
   return (
-  <div
-    style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #1e293b, #0f172a)",
-      color: "#fff",
-      fontFamily: "Arial, sans-serif",
-    }}
-  >
-    <h1 style={{ fontSize: "2.5rem", marginBottom: "20px" }}>
-      Notification App
-    </h1>
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Campus Notifications
+      </Typography>
 
-    <div
-      style={{
-        background: "#1e293b",
-        padding: "20px",
-        borderRadius: "12px",
-        width: "300px",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
-      }}
-    >
-      {notifications.length === 0 ? (
-        <p style={{ textAlign: "center" }}>Loading notifications...</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {notifications.map((note, index) => (
-            <li
-              key={index}
-              style={{
-                padding: "10px",
-                marginBottom: "10px",
-                background: "#334155",
-                borderRadius: "8px",
-              }}
-            >
-              {note}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </div>
-);
+      {/* Filter */}
+      <Select
+        value={type}
+        onChange={(e) => setType(e.target.value)}
+        displayEmpty
+        sx={{ minWidth: 200 }}
+      >
+        <MenuItem value="">All</MenuItem>
+        <MenuItem value="Event">Event</MenuItem>
+        <MenuItem value="Result">Result</MenuItem>
+        <MenuItem value="Placement">Placement</MenuItem>
+      </Select>
+
+      {/* 🔥 Top Notifications */}
+      <Typography variant="h6" sx={{ mt: 3 }}>
+        Top Notifications
+      </Typography>
+
+      {topNotifications.map((n) => {
+        const isViewed = viewed.includes(n.ID);
+
+        return (
+          <Card
+            key={n.ID}
+            sx={{
+              my: 2,
+              cursor: "pointer",
+              opacity: isViewed ? 0.5 : 1,
+            }}
+            onClick={() => markAsViewed(n.ID)}
+          >
+            <CardContent>
+              <Typography>
+                {isViewed ? "✔️ " : "🟢 "}
+                {n.Message}
+              </Typography>
+              <Typography variant="caption">
+                {n.Type} • {n.Timestamp}
+              </Typography>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* 🔥 All Notifications */}
+      <Typography variant="h6" sx={{ mt: 4 }}>
+        All Notifications
+      </Typography>
+
+      {filtered.map((n) => {
+        const isViewed = viewed.includes(n.ID);
+
+        return (
+          <Card
+            key={n.ID + "_all"}
+            sx={{
+              my: 2,
+              cursor: "pointer",
+              opacity: isViewed ? 0.5 : 1,
+            }}
+            onClick={() => markAsViewed(n.ID)}
+          >
+            <CardContent>
+              <Typography>
+                {isViewed ? "✔️ " : "🟢 "}
+                {n.Message}
+              </Typography>
+              <Typography variant="caption">
+                {n.Type} • {n.Timestamp}
+              </Typography>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* 🔥 Pagination */}
+      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        <button onClick={() => setPage((p) => Math.max(p - 1, 1))}>
+          Previous
+        </button>
+
+        <span>Page: {page}</span>
+
+        <button onClick={() => setPage((p) => p + 1)}>
+          Next
+        </button>
+      </div>
+    </Container>
+  );
 }
 
 export default App;
